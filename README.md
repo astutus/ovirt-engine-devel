@@ -14,6 +14,7 @@ Role Variables
 
 | Name                     | Default value         | Description          |
 |--------------------------|-----------------------|----------------------|
+| username                 | UNDEF                 | user who will check out the code|
 | project_dir              | UNDEF                 | directory into which the ovirt-engine code will be checked out (typically `/home/USER/git` or `/home/USER/projects`)|
 
 
@@ -28,6 +29,7 @@ Example Playbook
   gather_facts: false
 
   vars:
+    username: greg
     project_dir: /home/greg/git
 
 

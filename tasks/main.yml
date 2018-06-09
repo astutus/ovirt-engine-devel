@@ -155,7 +155,7 @@
   become_user: postgres
   command: psql engine -c 'DROP FUNCTION IF EXISTS uuid_generate_v1();'
   notify: restart postgresql
-  fail_when: false
+  failed_when: false
 
 - name: create uuid-ossp function
   become: true
