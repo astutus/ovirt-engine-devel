@@ -70,10 +70,10 @@
 
 - name: checkout engine
   become: true
-  become_user: {{ username }}
+  become_user: "{{ username }}"
   git:
     repo: 'https://gerrit.ovirt.org/ovirt-engine'
-    dest: {{ project_dir }}/ovirt-engine
+    dest: "{{ project_dir }}/ovirt-engine"
 
 
 # configure database
@@ -138,12 +138,6 @@
 
 # create engine database
 
-- name: drop v1 uuid function
-  become: true
-  become_user: postgres
-  command: psql engine -c 'DROP FUNCTION IF EXISTS uuid_generate_v1();'
-  notify: restart postgresql
-
 - name: Create engine database
   become: true
   become_user: postgres
@@ -156,8 +150,15 @@
     lc_ctype: en_US.UTF-8
   notify: restart postgresql
 
+- name: drop v1 uuid function
+  become: true
+  become_user: postgres
+  command: psql engine -c 'DROP FUNCTION IF EXISTS uuid_generate_v1();'
+  notify: restart postgresql
+  fail_when: false
+
 - name: create uuid-ossp function
   become: true
   become_user: postgres
-  command: psql engine -c 'CREATE EXTENSION "uuid-ossp";'
+  command: psql engine -c 'CREATE EXTENSION IF NOT EXISTS "uuid-ossp";'
   notify: restart postgresql
