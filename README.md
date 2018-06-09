@@ -21,12 +21,17 @@ Role Variables
 Example Playbook
 ----------------
 
+See more examples here https://github.com/gregsheremeta/ovirt-engine-devel-example
+
 ```yaml
 ---
 - name: oVirt engine development environment
   hosts: localhost
   connection: local
   gather_facts: false
+  become: true
+  roles:
+    - ovirt-engine-devel
 
   vars:
     username: greg
