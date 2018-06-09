@@ -1,0 +1,7 @@
+---
+# handlers file for ovirt-engine-devel
+
+- name: restart postgresql
+  service:
+    name: postgresql
+    state: restarted

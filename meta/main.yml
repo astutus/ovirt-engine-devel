@@ -1,0 +1,19 @@
+galaxy_info:
+  author: Greg Sheremeta
+  description: Configure a machine as an engine development environment.
+  company: Red Hat, Inc.
+
+  license: Apache License 2.0
+
+  min_ansible_version: 2.5
+
+  platforms:
+  - name: EL
+    versions:
+      - all
+  - name: Fedora
+    versions:
+      - 27
+      - 28
+
+  galaxy_tags: [ovirt, rhv, rhev, virtualization]

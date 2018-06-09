@@ -1,0 +1,163 @@
+---
+# tasks file for ovirt-engine-devel
+
+# setup repos
+
+- yum_repository:
+    name: ovirt-tested-master
+    description: ovirt-tested-master
+    baseurl: http://plain.resources.ovirt.org/repos/ovirt/tested/master/rpm/fc$releasever
+    gpgcheck: no
+
+# - yum_repository:
+#     name: ovirt-master-snapshot-static-OLD
+#     description: ovirt-master-snapshot-static-OLD
+#     baseurl: http://resources.ovirt.org/pub/ovirt-master-snapshot-static/rpm/fc$releasever
+#     gpgcheck: no
+#     includepkgs: ovirt-engine-wildfly*
+
+# - yum_repository:
+#     name: ovirt-master-snapshot-OLD
+#     description: ovirt-master-snapshot-OLD
+#     baseurl: http://resources.ovirt.org/pub/ovirt-master-snapshot/rpm/fc$releasever
+#     gpgcheck: no
+#     includepkgs: ovirt-engine-wildfly*
+
+# - name: hack waiting for f28 to be built
+#   dnf:
+#     name: http://plain.resources.ovirt.org/repos/ovirt/tested/master/rpm/el7/noarch/ovirt-ansible-repositories-1.1.2-0.1.master.20180405142636.el7.centos.noarch.rpm
+#     state: latest
+
+
+
+# install packages
+
+- dnf:
+    name: "{{item}}"
+    state: latest
+  with_items:
+      - java-devel
+      - git
+      - git-gui
+      - maven
+      - openssl
+      - postgresql-server
+      - postgresql-contrib
+      - m2crypto
+      - python-psycopg2
+      - python-cheetah
+      - python-daemon
+      - libxml2-python
+      - unzip
+      - pyflakes
+      - python-pep8
+      - python-docker-py
+      - mailcap
+      - python-jinja2
+      - python-dateutil
+      - ovirt-ansible-roles
+      - ovirt-engine-metrics
+      - ovirt-engine-wildfly
+      - ovirt-engine-wildfly-overlay
+      - ovirt-host-deploy
+      - ovirt-setup-lib
+      - ovirt-js-dependencies
+      - libselinux-python
+      - python-netaddr
+
+
+# checkout code
+
+- name: checkout engine
+  become: true
+  become_user: {{ username }}
+  git:
+    repo: 'https://gerrit.ovirt.org/ovirt-engine'
+    dest: {{ project_dir }}/ovirt-engine
+
+
+# configure database
+
+- name: postgres initdb
+  command: /usr/bin/postgresql-setup initdb creates=/var/lib/pgsql/data/postgresql.conf
+
+- name: enable postgresql service
+  service:
+    name: postgresql
+    enabled: yes
+    state: started
+
+
+# engine has a few postgres requirements
+
+- lineinfile: dest=/var/lib/pgsql/data/pg_hba.conf
+                 regexp='host\s+all\s+all\s+127.0.0.1/32\s+.*'
+                 line='host all all 127.0.0.1/32 password'
+  notify: restart postgresql
+
+- lineinfile: dest=/var/lib/pgsql/data/pg_hba.conf
+                 regexp='host\s+all\s+all\s+::1/128\s+.*'
+                 line='host all all ::1/128 password'
+  notify: restart postgresql
+
+- lineinfile: dest=/var/lib/pgsql/data/postgresql.conf
+                 regexp='max_connections'
+                 line='max_connections = 150'
+  notify: restart postgresql
+
+- lineinfile: dest=/var/lib/pgsql/data/postgresql.conf
+                 regexp='autovacuum_vacuum_scale_factor'
+                 line='autovacuum_vacuum_scale_factor = 0.01'
+  notify: restart postgresql
+
+- lineinfile: dest=/var/lib/pgsql/data/postgresql.conf
+                 regexp='autovacuum_analyze_scale_factor'
+                 line='autovacuum_analyze_scale_factor = 0.075'
+  notify: restart postgresql
+
+- lineinfile: dest=/var/lib/pgsql/data/postgresql.conf
+                 regexp='autovacuum_max_workers'
+                 line='autovacuum_max_workers = 6'
+  notify: restart postgresql
+
+- lineinfile: dest=/var/lib/pgsql/data/postgresql.conf
+                 regexp='work_mem'
+                 line='work_mem = 8192'
+  notify: restart postgresql
+
+
+# create engine user
+
+- name: create postgres engine user
+  become: true
+  become_user: postgres
+  postgresql_user:
+    name: engine
+    password: engine
+
+
+# create engine database
+
+- name: drop v1 uuid function
+  become: true
+  become_user: postgres
+  command: psql engine -c 'DROP FUNCTION IF EXISTS uuid_generate_v1();'
+  notify: restart postgresql
+
+- name: Create engine database
+  become: true
+  become_user: postgres
+  postgresql_db:
+    name: engine
+    template: template0
+    owner: engine
+    encoding: UTF8
+    lc_collate: en_US.UTF-8
+    lc_ctype: en_US.UTF-8
+  notify: restart postgresql
+
+- name: create uuid-ossp function
+  become: true
+  become_user: postgres
+  command: psql engine -c 'CREATE EXTENSION "uuid-ossp";'
+  notify: restart postgresql
