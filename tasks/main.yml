@@ -6,28 +6,8 @@
 - yum_repository:
     name: ovirt-tested-master
     description: ovirt-tested-master
-    baseurl: http://plain.resources.ovirt.org/repos/ovirt/tested/master/rpm/fc$releasever
+    baseurl: "http://plain.resources.ovirt.org/repos/ovirt/tested/master/rpm/{{ platform }}$releasever"
     gpgcheck: no
-
-# - yum_repository:
-#     name: ovirt-master-snapshot-static-OLD
-#     description: ovirt-master-snapshot-static-OLD
-#     baseurl: http://resources.ovirt.org/pub/ovirt-master-snapshot-static/rpm/fc$releasever
-#     gpgcheck: no
-#     includepkgs: ovirt-engine-wildfly*
-
-# - yum_repository:
-#     name: ovirt-master-snapshot-OLD
-#     description: ovirt-master-snapshot-OLD
-#     baseurl: http://resources.ovirt.org/pub/ovirt-master-snapshot/rpm/fc$releasever
-#     gpgcheck: no
-#     includepkgs: ovirt-engine-wildfly*
-
-# - name: hack waiting for f28 to be built
-#   dnf:
-#     name: http://plain.resources.ovirt.org/repos/ovirt/tested/master/rpm/el7/noarch/ovirt-ansible-repositories-1.1.2-0.1.master.20180405142636.el7.centos.noarch.rpm
-#     state: latest
-
 
 
 # install packages
@@ -36,34 +16,43 @@
     name: "{{item}}"
     state: latest
   with_items:
-      - java-devel
       - git
       - git-gui
+      - java-devel
+      - mailcap
+      - unzip
       - maven
       - openssl
+      - bind-utils
       - postgresql-server
       - postgresql-contrib
-      - m2crypto
-      - python-psycopg2
-      - python-cheetah
-      - python-daemon
-      - libxml2-python
-      - unzip
-      - pyflakes
-      - python-pep8
-      - python-docker-py
-      - mailcap
-      - python-jinja2
-      - python-dateutil
-      - ovirt-ansible-roles
-      - ovirt-engine-metrics
+      - m2crypto                       # all=m2crypto
+      - python-dateutil                # all=python-dateutil ; fc=python2-dateutil
+      - python-psycopg2                # all=python-psycopg2 ; fc=python2-psycopg2
+      - python-jinja2                  # all=python-jinja2 ; fc=python2-jinja2
+      - libxml2-python                 # all=libxml2-python ; fc=python-libxml2, python2-libxml2
+      - python-daemon                  # all=python-daemon ; fc=python2-daemon
+      - python-netaddr                 # all=python-netaddr ; fc=python2-netaddr
+      - python-cheetah                 # all=python-cheetah ; fc=python2-cheetah
+      - libselinux-python              # all=libselinux-python ; fc=python2-libselinux
+   # AppServer
       - ovirt-engine-wildfly
       - ovirt-engine-wildfly-overlay
-      - ovirt-host-deploy
-      - ovirt-setup-lib
+   # otopi
+      - otopi-java                     # all=otopi-java
+      - otopi-common                   # all=otopi-common
+      - python2-otopi                  # all=otopi, python-otopi, python2-otopi
+   # oVirt packages
+      - ovirt-ansible-roles            # all=ovirt-ansible-roles
+      - python2-ovirt-host-deploy      # all=ovirt-host-deploy, python-ovirt-host-deploy, python2-ovirt-host-deploy
+      - python2-ovirt-setup-lib        # all=python2-ovirt-setup-lib
       - ovirt-js-dependencies
-      - libselinux-python
-      - python-netaddr
+      - ovirt-engine-metrics
+   ## optionals
+      - python-pyflakes                # all=pyflakes, python-pyflakes ; fc=python2-pyflakes
+      - python-pep8                    # all=python-pep8 ; fc=python2-pep8
+      - python2-isort                  # all=python-isort, python2-isort
+      - python-docker-py               # all=python-docker-py ; fc=python2-docker-py ; el=docker-python
 
 
 # checkout code
@@ -125,7 +114,6 @@
                  line='work_mem = 8192'
   notify: restart postgresql
 
-
 # create engine user
 
 - name: create postgres engine user
@@ -162,3 +150,5 @@
   become_user: postgres
   command: psql engine -c 'CREATE EXTENSION IF NOT EXISTS "uuid-ossp";'
   notify: restart postgresql
+
+---
