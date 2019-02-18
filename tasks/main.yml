@@ -150,5 +150,4 @@
   become_user: postgres
   command: psql engine -c 'CREATE EXTENSION IF NOT EXISTS "uuid-ossp";'
   notify: restart postgresql
-
----
+...
